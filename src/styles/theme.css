@@ -1,0 +1,91 @@
+/* Design-System nach SPEC §8 */
+
+:root {
+  --color-fox: #e8772e;
+  --color-cream: #fff6e5;
+  --color-petrol: #1f4e5a;
+  --game-flip7: #f2b134;
+  --game-wizard: #5b4b8a;
+  --game-doppelkopf: #2e7d6b;
+
+  --tap-size: 44px; /* Mindestgröße für Bedienelemente */
+  --nav-height: 64px;
+}
+
+/* Dunkelmodus automatisch nach Geräteeinstellung */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fox: #f08a45;
+    --color-cream: #1b2a2f;
+    --color-petrol: #cfe3e6;
+    --game-flip7: #f5c25e;
+    --game-wizard: #9c8cd0;
+    --game-doppelkopf: #5db39e;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-petrol);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 16px;
+  /* Platz für die feste untere Navigationsleiste */
+  padding-bottom: calc(var(--nav-height) + 16px + env(safe-area-inset-bottom));
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  min-height: var(--tap-size);
+}
+
+/* ---------- Untere Navigationsleiste ---------- */
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: var(--color-petrol);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--nav-height);
+  min-width: var(--tap-size);
+  padding: 4px;
+  color: var(--color-cream);
+  text-align: center;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.bottom-nav a.active {
+  font-weight: 700;
+  box-shadow: inset 0 4px 0 var(--color-fox);
+}

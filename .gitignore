@@ -1,0 +1,13 @@
+# Abhängigkeiten und Build-Ergebnis
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Geheime Schlüssel – nie committen (SPEC §9)
+.env
+.env.*
+!.env.example
+
+# System- und Editor-Dateien
+.DS_Store
+*.log
