@@ -1,7 +1,7 @@
 # PRD – Spielebox der Foxy-Bande
 
 > **Slogan:** Spielebox der Foxy-Bande – Karten raus, Punkte rein!
-> **Version:** 1.1 · **Stand:** 15.11.2026 · **Owner:** Projektinhaber (Admin)
+> **Version:** 1.2 · **Stand:** 15.11.2026 · **Owner:** Projektinhaber (Admin)
 
 ---
 
@@ -42,7 +42,7 @@ Die Foxy-Bande (Familie plus Freunde) schreibt ihre Kartenspiele digital auf, st
 | F5 | Flip 7 | Rundenpunkte eintragen, Ziel 200 Punkte |
 | F6 | Wizard | Ansage + Stiche eintragen, die App rechnet |
 | F7 | Historie | Alle Partien mit Datum, Spielern und Ergebnis |
-| F8 | Hall of Fame | Siege und Siegquote, Ewige Tabelle, Rekorde (pro Spiel) |
+| F8 | Hall of Fame | Siege und Siegquote, Ewige Tabelle, Rekorde (pro Spiel, bei Doppelkopf zusätzlich pro Runde) |
 
 ---
 
@@ -54,7 +54,7 @@ Die Foxy-Bande (Familie plus Freunde) schreibt ihre Kartenspiele digital auf, st
 - Runde A: 2 Gastgeber + Freundespaar A
 - Runde B: 2 Gastgeber + Freundespaar B
 
-> Echte Namen stehen ausschließlich in der Datenbank, nicht im Code oder in Spezifikationen.
+> Die Runden tragen eigene Namen. Sie werden als Daten in der Datenbank gepflegt (vom Admin änderbar), nicht im Code. Echte Personennamen stehen ausschließlich in der Datenbank.
 
 **Eingabe pro Spiel:** Spielart (Normalspiel/Solo), Gewinner, Spielwert (ganze Zahl ≥ 1)
 
@@ -125,6 +125,8 @@ Die Foxy-Bande (Familie plus Freunde) schreibt ihre Kartenspiele digital auf, st
 
 Alle Kennzahlen werden **pro Spiel** geführt, nie spielübergreifend. Gäste sind ausgeschlossen.
 
+**Doppelkopf:** Die Hall of Fame lässt sich filtern nach *Gesamt*, *Runde A* oder *Runde B*. Alle Kennzahlen (inkl. Siegquote ab 5 Partien) gelten jeweils für die gewählte Ansicht.
+
 | Kennzahl | Definition |
 |---|---|
 | Siege gesamt | Anzahl gewonnener Partien. Ein Gleichstand ergibt einen geteilten Sieg, er zählt für jeden. |
@@ -178,7 +180,7 @@ Ein neues Spiel heißt dann: ein neues Modul anlegen, ohne die Kernlogik umzubau
 
 - Bockrunden und Pflichtsolo bei Doppelkopf
 - Automatische Kartenwertung bei Flip 7
-- Statistik pro Doppelkopf-Runde und Vergleich der Runden
+- Direkter Vergleich der Doppelkopf-Runden gegeneinander (z. B. Gegenüberstellung in einer Grafik)
 - Offline-Modus mit späterem Abgleich
 - Fotos, Kommentare, Teilen in sozialen Medien
 - Konten für Freunde
