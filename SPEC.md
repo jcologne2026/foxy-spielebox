@@ -36,16 +36,18 @@ Drei Schichten mit klarer Richtung: **UI → Logik → Daten.** Keine Schicht gr
 ```ts
 interface Repository {
   listPlayers(opts?: { includeArchived?: boolean }): Promise<Player[]>;
-  savePlayer(p: Player): Promise<Player>;
+  savePlayer(p: PlayerInput): Promise<Player>;         // ohne id = neu, mit id = ändern
   listGroups(): Promise<Group[]>;
   listMatches(filter?: { gameType?: GameType; groupId?: string; status?: MatchStatus }): Promise<Match[]>;
   getMatch(id: string): Promise<MatchDetail>;          // Partie + Teilnehmer + Runden
   createMatch(m: NewMatch): Promise<MatchDetail>;
-  saveRound(r: Round): Promise<Round>;                 // anlegen oder korrigieren
+  saveRound(r: RoundInput): Promise<Round>;            // anlegen oder korrigieren (gleiche roundNo ersetzt)
   finishMatch(id: string, result: MatchResult): Promise<void>;
   deleteMatch(id: string): Promise<void>;              // nur Admin
 }
 ```
+
+`PlayerInput` und `RoundInput` sind die Typen ohne die Felder, die das Repository selbst vergibt (`id`, Zeitstempel); Details in `src/data/repository.ts`.
 
 ---
 
