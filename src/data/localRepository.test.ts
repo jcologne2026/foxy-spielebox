@@ -171,6 +171,22 @@ describe("Partien auflisten, abschließen, löschen", () => {
     expect((await repo.listMatches({ status: "open" })).map((m) => m.gameType)).toEqual(["wizard"]);
   });
 
+  it("listet Partien samt Teilnehmern und Runden", async () => {
+    const [a, b] = await addPlayers("Anton Ameise", "Berta Biber");
+    const created = await repo.createMatch({
+      gameType: "flip7",
+      settings: {},
+      participants: [{ playerId: a.id }, { playerId: b.id }],
+    });
+    await repo.saveRound({ matchId: created.match.id, roundNo: 1, input: {}, points: { [created.players[0].id]: 5 } });
+
+    const details = await repo.listMatchDetails({ gameType: "flip7" });
+    expect(details).toHaveLength(1);
+    expect(details[0].players.map((p) => p.playerId)).toEqual([a.id, b.id]);
+    expect(details[0].rounds).toHaveLength(1);
+    expect(await repo.listMatchDetails({ gameType: "wizard" })).toEqual([]);
+  });
+
   it("setzt beim Abschluss Status, Endstände und Sieger (auch geteilt)", async () => {
     const [a, b, c] = await addPlayers("Anton Ameise", "Berta Biber", "Carlo Chamäleon");
     const { match, players } = await repo.createMatch({

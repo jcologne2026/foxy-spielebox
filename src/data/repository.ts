@@ -39,6 +39,8 @@ export interface Repository {
   savePlayer(p: PlayerInput): Promise<Player>;
   listGroups(): Promise<Group[]>;
   listMatches(filter?: MatchFilter): Promise<Match[]>;
+  /** Partien samt Teilnehmern und Runden, neueste zuerst (für Start, Historie, Hall of Fame). */
+  listMatchDetails(filter?: MatchFilter): Promise<MatchDetail[]>;
   /** Partie + Teilnehmer + Runden. */
   getMatch(id: string): Promise<MatchDetail>;
   createMatch(m: NewMatch): Promise<MatchDetail>;

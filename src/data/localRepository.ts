@@ -129,6 +129,12 @@ export class LocalRepository implements Repository {
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt)); // neueste zuerst
   }
 
+  async listMatchDetails(filter?: MatchFilter): Promise<MatchDetail[]> {
+    const data = this.load();
+    const matches = await this.listMatches(filter);
+    return matches.map((m) => this.detail(data, m.id));
+  }
+
   async getMatch(id: string): Promise<MatchDetail> {
     return this.detail(this.load(), id);
   }
@@ -150,6 +156,7 @@ export class LocalRepository implements Repository {
       groupId: m.groupId,
       status: "open",
       settings: m.settings,
+      createdBy: m.createdBy,
       startedAt: nowIso(),
     };
 

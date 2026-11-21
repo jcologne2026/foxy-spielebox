@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Foxy-Bande">
+  <circle cx="60" cy="60" r="56" fill="#FFF6E5" stroke="#1F4E5A" stroke-width="4"/>
+  <path d="M30 40 L45 70 L60 92 L75 70 L90 40 L72 52 L60 48 L48 52 Z" fill="#E8772E"/>
+</svg>

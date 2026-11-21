@@ -49,6 +49,8 @@ export interface GameLogic<I, S> {
   /** Punkte je Teilnehmer-ID. Nur für gültige Eingaben aufrufen. */
   scoreRound(input: I, ctx: RoundContext<S>): Record<string, number>;
   matchStatus(totals: Record<string, number>, ctx: RoundContext<S>): MatchProgress;
+  /** Optionale Kurzbeschreibung einer Runde für den Verlauf, z. B. „Solo Bruno Bär gewonnen“. */
+  describeRound?(input: I, ctx: RoundContext<S>): string;
 }
 
 export interface RoundFormProps<I, S> {

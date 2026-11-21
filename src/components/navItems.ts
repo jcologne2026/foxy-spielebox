@@ -1,6 +1,7 @@
 export interface NavItem {
   label: string;
   to: string;
+  icon: string;
 }
 
 /**
@@ -9,12 +10,12 @@ export interface NavItem {
  */
 export function getNavItems(isAdmin: boolean): NavItem[] {
   const items: NavItem[] = [
-    { label: "Start", to: "/" },
-    { label: "Historie", to: "/historie" },
-    { label: "Hall of Fame", to: "/hall-of-fame/flip7" },
+    { label: "Start", to: "/", icon: "🏠" },
+    { label: "Historie", to: "/historie", icon: "📜" },
+    { label: "Hall of Fame", to: "/hall-of-fame/flip7", icon: "🏆" },
   ];
   if (isAdmin) {
-    items.push({ label: "Verwaltung", to: "/verwaltung" });
+    items.push({ label: "Verwaltung", to: "/verwaltung", icon: "⚙️" });
   }
   return items;
 }

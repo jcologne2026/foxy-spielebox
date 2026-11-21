@@ -108,6 +108,8 @@ export interface NewMatch {
   groupId?: string;
   settings: MatchSettings;
   participants: NewParticipant[];
+  /** Konto, das die Partie anlegt; im lokalen Modus leer. */
+  createdBy?: string;
 }
 
 /** Ergebnis beim Abschluss einer Partie (SPEC §5). */
