@@ -12,7 +12,7 @@ export function getNavItems(isAdmin: boolean): NavItem[] {
   const items: NavItem[] = [
     { label: "Start", to: "/", icon: "🏠" },
     { label: "Historie", to: "/historie", icon: "📜" },
-    { label: "Hall of Fame", to: "/hall-of-fame/flip7", icon: "🏆" },
+    { label: "Hall of Fame", to: "/hall-of-fame", icon: "🏆" },
   ];
   if (isAdmin) {
     items.push({ label: "Verwaltung", to: "/verwaltung", icon: "⚙️" });

@@ -20,6 +20,7 @@ export function App() {
         <Route path="/partie/:id" element={<MatchScreen />} />
         <Route path="/partie/:id/runde/:roundNo" element={<RoundScreen />} />
         <Route path="/historie" element={<HistoryScreen />} />
+        <Route path="/hall-of-fame" element={<HallOfFameScreen />} />
         <Route path="/hall-of-fame/:gameType" element={<HallOfFameScreen />} />
         <Route path="/verwaltung" element={<AdminScreen />} />
         {/* Unbekannte Adresse → zurück zur Startseite */}

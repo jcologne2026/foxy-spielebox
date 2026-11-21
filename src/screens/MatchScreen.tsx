@@ -103,7 +103,7 @@ function MatchView({
       <Header title={game.name} back={finished ? "/historie" : "/"}>
         <p className="muted subtitle">
           {formatDate(match.startedAt)}
-          {total !== undefined && ` · Runde ${last} von ${total}`}
+          {total !== undefined && (last > 0 ? ` · Runde ${last} von ${total}` : ` · ${total} Runden`)}
           {describeSettings(game, ctx.settings).map((s) => ` · ${s}`)}
           {finished && " · beendet"}
         </p>

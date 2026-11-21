@@ -3,6 +3,7 @@ import type {
   Group,
   Match,
   MatchDetail,
+  MatchPlayer,
   MatchResult,
   MatchStatus,
   NewMatch,
@@ -23,6 +24,18 @@ export type PlayerInput = Omit<Player, "id" | "createdAt"> & { id?: string };
  */
 export type RoundInput = Omit<Round, "id" | "createdAt" | "updatedAt">;
 
+/** Eingabe für saveGroup: ohne `id` = neue Runde. Genau 4 Mitglieder. */
+export type GroupInput = Omit<Group, "id" | "gameType"> & { id?: string };
+
+/** Kompletter Datenbestand – für Export (Backup) und Import (Umzug). */
+export interface DataSnapshot {
+  players: Player[];
+  groups: Group[];
+  matches: Match[];
+  matchPlayers: MatchPlayer[];
+  rounds: Round[];
+}
+
 export interface MatchFilter {
   gameType?: GameType;
   groupId?: string;
@@ -38,6 +51,8 @@ export interface Repository {
   listPlayers(opts?: { includeArchived?: boolean }): Promise<Player[]>;
   savePlayer(p: PlayerInput): Promise<Player>;
   listGroups(): Promise<Group[]>;
+  /** Nur Admin: Runde anlegen oder umbenennen. */
+  saveGroup(g: GroupInput): Promise<Group>;
   listMatches(filter?: MatchFilter): Promise<Match[]>;
   /** Partien samt Teilnehmern und Runden, neueste zuerst (für Start, Historie, Hall of Fame). */
   listMatchDetails(filter?: MatchFilter): Promise<MatchDetail[]>;
@@ -49,4 +64,8 @@ export interface Repository {
   finishMatch(id: string, result: MatchResult): Promise<void>;
   /** Nur Admin (Prüfung ab Phase 4). */
   deleteMatch(id: string): Promise<void>;
+  /** Alle Daten als ein Objekt (Backup als JSON-Datei, SPEC §12). */
+  exportAll(): Promise<DataSnapshot>;
+  /** Nur Admin: übernimmt einen kompletten Bestand (Import, SPEC §12). */
+  importAll(data: DataSnapshot): Promise<void>;
 }

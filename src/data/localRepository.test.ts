@@ -245,3 +245,60 @@ describe("Speicher", () => {
     expect(repo.isEmpty()).toBe(false);
   });
 });
+
+describe("Doppelkopf-Runden verwalten", () => {
+  it("legt eine Runde mit 4 Spielern an und benennt sie um", async () => {
+    const ps = await addPlayers("Anton Ameise", "Berta Biber", "Carlo Chamäleon", "Dora Dachs");
+    const memberIds = ps.map((p) => p.id);
+    const g = await repo.saveGroup({ name: " Runde A ", memberIds });
+    expect(g).toMatchObject({ name: "Runde A", gameType: "doppelkopf", memberIds });
+
+    await repo.saveGroup({ id: g.id, name: "Dienstagsrunde", memberIds });
+    expect((await repo.listGroups()).map((x) => x.name)).toEqual(["Dienstagsrunde"]);
+  });
+
+  it("verlangt genau 4 verschiedene, bekannte Spieler und einen Namen", async () => {
+    const ps = await addPlayers("Anton Ameise", "Berta Biber", "Carlo Chamäleon", "Dora Dachs");
+    const ids = ps.map((p) => p.id);
+    await expect(repo.saveGroup({ name: "X", memberIds: ids.slice(0, 3) })).rejects.toThrow("genau 4");
+    await expect(repo.saveGroup({ name: "X", memberIds: [ids[0], ids[0], ids[1], ids[2]] })).rejects.toThrow("genau 4");
+    await expect(repo.saveGroup({ name: "X", memberIds: [...ids.slice(0, 3), "fremd"] })).rejects.toThrow("bekannter");
+    await expect(repo.saveGroup({ name: " ", memberIds: ids })).rejects.toThrow("Name");
+  });
+});
+
+describe("Export und Import", () => {
+  it("ein Export lässt sich in einen leeren Speicher importieren", async () => {
+    const [a, b, c] = await addPlayers("Anton Ameise", "Berta Biber", "Carlo Chamäleon");
+    const m = await repo.createMatch({
+      gameType: "flip7",
+      settings: { target: 200 },
+      participants: [a, b, c].map((p) => ({ playerId: p.id })),
+    });
+    await repo.saveRound({ matchId: m.match.id, roundNo: 1, input: {}, points: { [m.players[0].id]: 7 } });
+    const backup = JSON.parse(JSON.stringify(await repo.exportAll()));
+
+    const other = new LocalRepository(new MemoryStorage());
+    await other.importAll(backup);
+    expect(await other.exportAll()).toEqual(await repo.exportAll());
+  });
+
+  it("führt einen Import mit vorhandenen Daten zusammen", async () => {
+    const [a] = await addPlayers("Anton Ameise");
+    const other = new LocalRepository(new MemoryStorage());
+    const [b] = await (async () => [await other.savePlayer({ name: "Berta Biber", archived: false })])();
+    await repo.importAll({ ...(await other.exportAll()), players: [b, { ...a, name: "Anton Ameise II" }] });
+    expect((await repo.listPlayers()).map((p) => p.name)).toEqual(["Anton Ameise II", "Berta Biber"]);
+  });
+
+  it("lehnt Dateien ab, die kein Backup sind, und lässt die Daten unverändert", async () => {
+    await addPlayers("Anton Ameise");
+    await expect(repo.importAll({ players: [] } as never)).rejects.toThrow("kein Backup");
+    expect(await repo.listPlayers()).toHaveLength(1);
+  });
+
+  it("lehnt Backups mit kaputten Verweisen ab", async () => {
+    const broken = { ...emptyData(), matchPlayers: [{ id: "x", matchId: "fehlt", seat: 1, isWinner: false }] };
+    await expect(repo.importAll(broken)).rejects.toThrow("fehlerhaft");
+  });
+});

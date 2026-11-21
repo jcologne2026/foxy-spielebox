@@ -10,19 +10,14 @@ import type {
 } from "../domain/types";
 import { newId, nowIso } from "./ids";
 import type { KeyValueStorage } from "./memoryStorage";
-import type { MatchFilter, PlayerInput, Repository, RoundInput } from "./repository";
+import type { DataSnapshot, GroupInput, MatchFilter, PlayerInput, Repository, RoundInput } from "./repository";
+import { checkSnapshot } from "./snapshot";
 
 /** Schlüssel im localStorage. „v1“ erlaubt später ein geändertes Format. */
 export const STORAGE_KEY = "foxy-spielebox:v1";
 
 /** Alles, was lokal gespeichert wird – ein JSON-Objekt. */
-export interface LocalData {
-  players: Player[];
-  groups: Group[];
-  matches: Match[];
-  matchPlayers: MatchPlayer[];
-  rounds: Round[];
-}
+export type LocalData = DataSnapshot;
 
 export function emptyData(): LocalData {
   return { players: [], groups: [], matches: [], matchPlayers: [], rounds: [] };
@@ -114,6 +109,36 @@ export class LocalRepository implements Repository {
 
   async listGroups(): Promise<Group[]> {
     return this.load().groups;
+  }
+
+  async saveGroup(input: GroupInput): Promise<Group> {
+    const data = this.load();
+    const name = input.name.trim();
+    if (name === "") {
+      throw new Error("Der Name der Runde darf nicht leer sein.");
+    }
+    const members = new Set(input.memberIds);
+    if (members.size !== 4 || input.memberIds.length !== 4) {
+      throw new Error("Eine Runde hat genau 4 verschiedene Spieler.");
+    }
+    if (!input.memberIds.every((id) => data.players.some((p) => p.id === id))) {
+      throw new Error("Ein Mitglied der Runde ist kein bekannter Spieler.");
+    }
+
+    if (input.id === undefined) {
+      const group: Group = { id: newId(), name, gameType: "doppelkopf", memberIds: [...input.memberIds] };
+      data.groups.push(group);
+      this.save(data);
+      return group;
+    }
+    const index = data.groups.findIndex((g) => g.id === input.id);
+    if (index === -1) {
+      throw new Error("Runde nicht gefunden.");
+    }
+    const group: Group = { ...data.groups[index], name, memberIds: [...input.memberIds] };
+    data.groups[index] = group;
+    this.save(data);
+    return group;
   }
 
   // ---------- Partien ----------
@@ -258,6 +283,29 @@ export class LocalRepository implements Repository {
     data.matchPlayers = data.matchPlayers.filter((mp) => mp.matchId !== id);
     data.rounds = data.rounds.filter((r) => r.matchId !== id);
     this.save(data);
+  }
+
+  // ---------- Export und Import ----------
+
+  async exportAll(): Promise<DataSnapshot> {
+    return this.load();
+  }
+
+  async importAll(data: DataSnapshot): Promise<void> {
+    const incoming = checkSnapshot(data);
+    const current = this.load();
+    // Zusammenführen: gleiche ID wird überschrieben, Neues kommt dazu
+    const merge = <T extends { id: string }>(a: T[], b: T[]): T[] => [
+      ...new Map([...a, ...b].map((x) => [x.id, x])).values(),
+    ];
+    const merged: DataSnapshot = {
+      players: merge(current.players, incoming.players),
+      groups: merge(current.groups, incoming.groups),
+      matches: merge(current.matches, incoming.matches),
+      matchPlayers: merge(current.matchPlayers, incoming.matchPlayers),
+      rounds: merge(current.rounds, incoming.rounds),
+    };
+    this.save(checkSnapshot(merged));
   }
 
   // ---------- Hilfsfunktionen ----------

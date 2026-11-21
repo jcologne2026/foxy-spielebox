@@ -1,3 +1,4 @@
+import { localAuth, type AuthService } from "./auth";
 import { LocalRepository } from "./localRepository";
 import { LocalPhotoStore, type PhotoStore } from "./photos";
 import type { Repository } from "./repository";
@@ -19,3 +20,4 @@ if (import.meta.env.DEV) {
 
 export const repository: Repository = local;
 export const photos: PhotoStore = new LocalPhotoStore();
+export const auth: AuthService = localAuth;
