@@ -17,6 +17,7 @@ Anforderungen stehen in der [PRD.md](PRD.md), die technische Umsetzung in der [S
 - **Historie** aller Partien und **Hall of Fame** pro Spiel (bei Doppelkopf zusätzlich pro Runde)
 - **Verwaltung** für Spieler, Profilfotos, Doppelkopf-Runden, Konten und Backup (Export/Import als JSON)
 - Fürs Handy gemacht, mit Hell- und Dunkelmodus
+- Lässt sich als App auf den Home-Bildschirm legen (iPhone: Safari → Teilen → *Zum Home-Bildschirm*). Die Icons in `public/` sind aus [src/assets/app-icon.svg](src/assets/app-icon.svg) erzeugt.
 
 ## Befehle
 
