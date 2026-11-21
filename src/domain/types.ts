@@ -79,6 +79,19 @@ export interface Round {
   updatedAt: string;
 }
 
+/** Teilnehmer für Anzeige und Spiel-Module: MatchPlayer + Name (+ Foto). */
+export interface Participant {
+  /** MatchPlayer.id – Schlüssel für Punkte und Eingaben. */
+  id: string;
+  /** Anzeigename (Spielername oder Gastname). */
+  name: string;
+  /** Leer bei Gästen. */
+  playerId?: string;
+  photoPath?: string;
+  /** Spieler ist archiviert. */
+  archived?: boolean;
+}
+
 /** Partie mit Teilnehmern (nach Sitz sortiert) und Runden (nach Nummer sortiert). */
 export interface MatchDetail {
   match: Match;
