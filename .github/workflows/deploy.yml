@@ -1,0 +1,60 @@
+# Testet, baut und veröffentlicht die App auf GitHub Pages (SPEC §10, §13 Inkrement 3).
+# Ist ein Test oder der Build rot, wird nichts veröffentlicht.
+name: Deploy auf GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # zusätzlich per Knopf im Tab „Actions“ startbar
+
+# Minimale Rechte: Code lesen, auf Pages schreiben, Ausweis (id-token) für Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Immer nur eine Veröffentlichung gleichzeitig; eine laufende wird nicht abgebrochen
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v7
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: Pakete installieren
+        run: npm ci
+
+      - name: Tests ausführen
+        run: npm test
+
+      - name: Produktions-Build erzeugen
+        run: npm run build
+
+      - name: Pages vorbereiten
+        uses: actions/configure-pages@v6
+
+      - name: dist/ als Paket hochladen
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build # startet nur, wenn build grün war
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v5
