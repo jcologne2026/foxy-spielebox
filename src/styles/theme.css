@@ -774,3 +774,43 @@ tr:focus-visible {
   font-size: 1.2rem;
   line-height: 1;
 }
+
+/* ---------- Wizard und Doppelkopf ---------- */
+
+.form-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.sum-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 4px 0;
+  font-weight: 700;
+}
+
+.ok {
+  color: var(--game-doppelkopf);
+}
+
+.spaced {
+  margin-top: 16px;
+}
+
+button.choice {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
