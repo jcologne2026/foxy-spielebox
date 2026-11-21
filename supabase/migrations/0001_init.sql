@@ -114,6 +114,11 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Konten, die schon vor diesem Skript angelegt wurden, bekommen nachträglich ein Profil
+insert into public.profiles (id, email)
+select id, email from auth.users
+on conflict (id) do nothing;
+
 -- Runde anlegen oder ändern: Name + genau 4 Mitglieder in einem Schritt
 create or replace function public.save_group(p_id uuid, p_name text, p_member_ids uuid[])
 returns uuid
@@ -257,6 +262,16 @@ create policy "rounds löschen" on public.rounds for delete to authenticated usi
 create policy "profiles lesen"   on public.profiles for select to authenticated using (true);
 create policy "profiles ändern"  on public.profiles for update to authenticated using (public.is_admin()) with check (public.is_admin());
 create policy "profiles löschen" on public.profiles for delete to authenticated using (public.is_admin());
+
+-- =========================================================================
+-- Tabellenrechte ausdrücklich vergeben (nicht auf Supabase-Voreinstellungen verlassen).
+-- Welche Zeilen jemand sieht oder ändern darf, entscheiden weiterhin die Regeln oben.
+-- =========================================================================
+
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+-- Nur für den wöchentlichen Ping (supabase-ping.yml): ohne Login liefert RLS eine leere Liste
+grant select on public.players to anon;
 
 -- =========================================================================
 -- Foto-Speicher: privater Bucket, lesen angemeldet (signierte URLs), schreiben Admin
