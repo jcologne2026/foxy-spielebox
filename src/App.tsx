@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
 import { BottomNav } from "./components/BottomNav";
+import { SessionGate } from "./components/SessionGate";
 import { AdminScreen } from "./screens/AdminScreen";
 import { HallOfFameScreen } from "./screens/HallOfFameScreen";
 import { HistoryScreen } from "./screens/HistoryScreen";
@@ -12,7 +13,7 @@ import { StartScreen } from "./screens/StartScreen";
 // Routen nach SPEC §7 (S1–S8)
 export function App() {
   return (
-    <>
+    <SessionGate>
       <Routes>
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/" element={<StartScreen />} />
@@ -27,6 +28,6 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />
-    </>
+    </SessionGate>
   );
 }

@@ -2,8 +2,15 @@ import { useEffect, useState, type ReactNode } from "react";
 import { photos } from "../data";
 import { initials } from "./format";
 
-// Einfacher Zwischenspeicher, damit signierte URLs nicht bei jedem Rendern neu geholt werden
-const urlCache = new Map<string, Promise<string | null>>();
+// Zwischenspeicher, damit signierte URLs nicht bei jedem Rendern neu geholt werden.
+// Signierte URLs gelten 60 Minuten – Einträge verfallen darum nach 50 Minuten.
+const MAX_AGE_MS = 50 * 60 * 1000;
+const urlCache = new Map<string, { url: Promise<string | null>; at: number }>();
+
+/** Nach dem Ändern oder Entfernen eines Fotos aufrufen, damit das neue Bild erscheint. */
+export function forgetPhotoUrl(photoPath?: string): void {
+  if (photoPath) urlCache.delete(photoPath);
+}
 
 function usePhotoUrl(photoPath?: string): string | null {
   const [url, setUrl] = useState<string | null>(null);
@@ -13,12 +20,12 @@ function usePhotoUrl(photoPath?: string): string | null {
       return;
     }
     let active = true;
-    let pending = urlCache.get(photoPath);
-    if (!pending) {
-      pending = photos.url(photoPath).catch(() => null);
-      urlCache.set(photoPath, pending);
+    let entry = urlCache.get(photoPath);
+    if (!entry || Date.now() - entry.at > MAX_AGE_MS) {
+      entry = { url: photos.url(photoPath).catch(() => null), at: Date.now() };
+      urlCache.set(photoPath, entry);
     }
-    pending.then((u) => active && setUrl(u));
+    entry.url.then((u) => active && setUrl(u));
     return () => {
       active = false;
     };

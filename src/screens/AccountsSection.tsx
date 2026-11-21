@@ -36,8 +36,8 @@ function AccountsList({ players, run }: { players: Player[]; run: Run }) {
     <section>
       <h2>Konten</h2>
       <p className="muted small">
-        Neue Konten lädst du im Supabase-Dashboard ein (Authentication → Users → Invite user). Danach erscheinen sie hier, und du legst
-        Rolle und Spieler fest.
+        Neue Konten legst du im Supabase-Dashboard an (Authentication → Users → Add user → Create new user, mit Startpasswort).
+        Danach erscheinen sie hier, und du legst Rolle und Spieler fest.
       </p>
       <Loaded state={state}>
         {(profiles) => (

@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Navigate } from "react-router";
-import { Avatar } from "../components/Avatar";
+import { Avatar, forgetPhotoUrl } from "../components/Avatar";
 import { cropToSquareJpeg, downloadText } from "../components/photo";
 import { useSession } from "../components/session";
 import { ErrorList, Header, Loaded } from "../components/ui";
@@ -145,6 +145,7 @@ function PlayerEditor({ player, run, onDone }: { player: Player; run: Run; onDon
     await run(async () => {
       const jpeg = await cropToSquareJpeg(file);
       const photoPath = await photos.upload(player.id, jpeg);
+      forgetPhotoUrl(photoPath);
       await repository.savePlayer({ ...player, photoPath });
     }, "Foto gespeichert.");
   }
@@ -155,6 +156,7 @@ function PlayerEditor({ player, run, onDone }: { player: Player; run: Run; onDon
     await run(async () => {
       await repository.savePlayer({ ...player, photoPath: undefined });
       await photos.remove(path);
+      forgetPhotoUrl(path);
     }, "Foto entfernt.");
   }
 

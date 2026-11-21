@@ -1,0 +1,30 @@
+# Supabase pausiert Gratis-Projekte nach 7 Tagen ohne Nutzung (SPEC §12).
+# Dieser Workflow fragt einmal pro Woche die Datenbank an und hält das Projekt so wach.
+name: Supabase wach halten
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # montags 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Datenbank anfragen
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "Keine Supabase-Secrets gesetzt – nichts zu tun."
+            exit 0
+          fi
+          # Ohne Login liefert RLS eine leere Liste – die Anfrage zählt trotzdem als Nutzung
+          curl --fail --silent --show-error \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/players?select=id&limit=1"

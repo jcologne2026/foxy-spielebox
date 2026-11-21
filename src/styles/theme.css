@@ -917,3 +917,16 @@ button.choice {
 .button-row .link-button {
   flex: none;
 }
+
+/* ---------- Login ---------- */
+
+.login-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.account-line {
+  margin-top: 32px;
+  text-align: center;
+}

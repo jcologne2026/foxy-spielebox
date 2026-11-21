@@ -5,7 +5,7 @@ import { formatDate, joinNames, signed } from "../components/format";
 import { useSession } from "../components/session";
 import { ErrorList, Header, Loaded } from "../components/ui";
 import { useLoad } from "../components/useLoad";
-import { repository } from "../data";
+import { auth, repository } from "../data";
 import { computeResult, computeTotals, rankParticipants, toParticipants } from "../domain/match";
 import type { MatchDetail, Participant } from "../domain/types";
 import { buildRoundContext, describeSettings, lastRoundNo } from "../games/context";
@@ -107,6 +107,7 @@ function MatchView({
           {describeSettings(game, ctx.settings).map((s) => ` · ${s}`)}
           {finished && " · beendet"}
         </p>
+        {match.createdBy && <CreatedBy accountId={match.createdBy} />}
       </Header>
 
       {finished && (
@@ -264,4 +265,11 @@ function RoundTable({
       {editable && <p className="muted small">Tippe auf eine Runde, um sie zu korrigieren.</p>}
     </div>
   );
+}
+
+/** Zeigt, welches Konto die Partie angelegt hat (PRD §6). */
+function CreatedBy({ accountId }: { accountId: string }) {
+  const [state] = useLoad(() => auth.getProfile(accountId), [accountId]);
+  if (state.status !== "ready" || !state.data?.email) return null;
+  return <p className="muted small subtitle">angelegt von {state.data.email}</p>;
 }

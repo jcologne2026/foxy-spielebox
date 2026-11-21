@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { GameTile } from "../components/GameTile";
 import { formatDate, joinNames } from "../components/format";
+import { useSession } from "../components/session";
 import { Loaded } from "../components/ui";
 import { useLoad } from "../components/useLoad";
 import { repository } from "../data";
@@ -10,6 +11,7 @@ import logoUrl from "../assets/logo.svg";
 
 /** S2 – Start: Logo, Slogan, Spielkacheln, offene Partien. */
 export function StartScreen() {
+  const session = useSession();
   const [state] = useLoad(
     async () => ({
       open: await repository.listMatchDetails({ status: "open" }),
@@ -65,6 +67,16 @@ export function StartScreen() {
           )
         }
       </Loaded>
+
+      {session.signOut && (
+        <p className="account-line muted small">
+          Angemeldet als {session.email}
+          {session.isAdmin && " (Admin)"} ·{" "}
+          <button type="button" className="link-button" onClick={session.signOut}>
+            Abmelden
+          </button>
+        </p>
+      )}
     </main>
   );
 }

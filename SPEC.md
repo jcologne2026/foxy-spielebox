@@ -1,6 +1,7 @@
 # SPEC – Spielebox der Foxy-Bande
 
-> **Version:** 1.0 · **Stand:** 15.11.2026 · **Grundlage:** PRD.md v1.2
+> **Version:** 1.1 · **Stand:** 21.11.2026 · **Grundlage:** PRD.md v1.2
+> **Änderungen in 1.1:** Ergänzungen aus der Umsetzung, jeweils mit „(1.1)“ markiert.
 > Die PRD beschreibt das **Was und Warum**, diese SPEC das **Wie**. Bei Widersprüchen gilt die PRD; die SPEC wird dann angepasst.
 
 ---
@@ -38,16 +39,22 @@ interface Repository {
   listPlayers(opts?: { includeArchived?: boolean }): Promise<Player[]>;
   savePlayer(p: PlayerInput): Promise<Player>;         // ohne id = neu, mit id = ändern
   listGroups(): Promise<Group[]>;
+  saveGroup(g: GroupInput): Promise<Group>;            // (1.1) Runde anlegen/umbenennen, nur Admin
   listMatches(filter?: { gameType?: GameType; groupId?: string; status?: MatchStatus }): Promise<Match[]>;
+  listMatchDetails(filter?: MatchFilter): Promise<MatchDetail[]>; // (1.1) für Start, Historie, Hall of Fame
   getMatch(id: string): Promise<MatchDetail>;          // Partie + Teilnehmer + Runden
   createMatch(m: NewMatch): Promise<MatchDetail>;
   saveRound(r: RoundInput): Promise<Round>;            // anlegen oder korrigieren (gleiche roundNo ersetzt)
   finishMatch(id: string, result: MatchResult): Promise<void>;
   deleteMatch(id: string): Promise<void>;              // nur Admin
+  exportAll(): Promise<DataSnapshot>;                  // (1.1) Backup als JSON (§12)
+  importAll(data: DataSnapshot): Promise<void>;        // (1.1) Import, gleiche ID wird überschrieben
 }
 ```
 
 `PlayerInput` und `RoundInput` sind die Typen ohne die Felder, die das Repository selbst vergibt (`id`, Zeitstempel); Details in `src/data/repository.ts`.
+
+**(1.1)** `listMatchDetails` liefert Partien samt Teilnehmern in einer Abfrage, statt `getMatch` je Partie aufzurufen. Neben dem Repository gibt es zwei weitere Schnittstellen in `src/data/`: `PhotoStore` (Fotos speichern und anzeigen) und `AuthService` (Login, Konten). `src/data/index.ts` wählt die Umsetzung: Supabase, wenn `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` gesetzt sind, sonst lokal.
 
 ---
 
@@ -63,13 +70,14 @@ Gleiche Struktur lokal (TypeScript-Typen) und in Supabase (Tabellen). Schlüssel
 | `id` | uuid, PK | = Supabase-Auth-User-ID |
 | `role` | text | `admin` oder `member` |
 | `player_id` | uuid, FK → players, optional | Verknüpfung Konto ↔ Spieler |
+| `email` | text | (1.1) Anzeige in der Verwaltung, vom Trigger beim Anlegen des Kontos gesetzt |
 
 **`players`** – zentrale Spielerliste
 | Feld | Typ | Regel |
 |---|---|---|
 | `id` | uuid, PK | |
 | `name` | text | Pflicht, eindeutig unter nicht archivierten Spielern |
-| `photo_path` | text, optional | Pfad im Storage-Bucket `player-photos` |
+| `photo_path` | text, optional | Pfad im Storage-Bucket `player-photos`; (1.1) mit Versions-Anhang `?v=<Zeitstempel>`, damit alle Geräte ein geändertes Foto neu laden |
 | `archived` | boolean | Standard `false`; archivieren statt löschen |
 | `created_at` | timestamptz | |
 
@@ -85,6 +93,7 @@ Gleiche Struktur lokal (TypeScript-Typen) und in Supabase (Tabellen). Schlüssel
 |---|---|---|
 | `group_id` | uuid, FK → groups | PK zusammen mit `player_id` |
 | `player_id` | uuid, FK → players | genau 4 Mitglieder je Runde |
+| `position` | int | (1.1) Reihenfolge = Sitzreihenfolge in neuen Partien |
 
 **`matches`** – Partien
 | Feld | Typ | Regel |
@@ -161,6 +170,13 @@ interface GameModule<I, S> {
 
 `validateRound`, `scoreRound` und `matchStatus` sind reine Funktionen. `RoundForm` ist die einzige UI-Komponente des Moduls.
 
+**(1.1) Umsetzung:** Der Vertrag ist zweigeteilt, damit `src/games/` ohne React testbar bleibt: `GameLogic` (Datei `module.ts`, reine Funktionen mit Tests) und `GameModule = GameLogic + RoundForm` (zusammengesetzt in `registry.ts`). Zusätzlich zum Vertrag oben:
+- `settingFields` beschreibt die Einstellungen als Daten (Zahl mit min/max oder Schalter); die UI baut daraus das Formular. `validateSettings` prüft sie.
+- `totalRounds(ctx)` (optional) nennt die feste Rundenzahl (Wizard).
+- `describeRound(input, ctx)` (optional) beschreibt eine Runde im Verlauf, z. B. „Solo (2) … gewonnen“.
+- `Participant` = `{ id (match_player_id), name, playerId?, photoPath?, archived? }`.
+- Bei `matchStatus` ist `ctx.roundNo` die Nummer der zuletzt gespielten Runde.
+
 **Registrierung:** `src/games/registry.ts` exportiert die Liste aller Module. Startseite, Historie und Hall of Fame lesen ausschließlich aus dieser Liste.
 
 ### 4.2 Flip 7
@@ -220,9 +236,10 @@ interface GameModule<I, S> {
 1. **Anlegen:** Spiel wählen → Teilnehmer wählen (bzw. Runde bei Doppelkopf) → Settings → `matches` + `match_players` anlegen, `status = open`.
 2. **Runde eintragen:** `RoundForm` → `validateRound` → bei Erfolg `scoreRound` → `rounds` speichern.
 3. **Korrigieren:** bestehende Runde öffnen, Input ändern, erneut validieren und berechnen.
-4. **Statusprüfung** nach jeder Runde mit `matchStatus`: bei `suggestEnd` Hinweis „Partie beenden?“, bei `finished` automatisch zum Abschluss.
+4. **Statusprüfung** nach jeder Runde mit `matchStatus`: bei `suggestEnd` Hinweis „Partie beenden?“, bei `finished` automatisch zum Abschluss. (1.1) „Automatisch zum Abschluss“ heißt: Der Abschluss-Dialog öffnet sich von selbst und lässt sich zum Korrigieren einer Runde schließen.
 5. **Abschluss:** `final_score` = Summe der Rundenpunkte; `is_winner` = alle mit maximalem `final_score`; `status = finished`, `finished_at` setzen.
 6. **Offene Partien** erscheinen auf der Startseite zum Fortsetzen.
+7. (1.1) **Beendete Partien sind schreibgeschützt.** Korrekturen sind nur vor dem Abschluss möglich; der Admin kann eine Partie löschen.
 
 ---
 
@@ -261,7 +278,7 @@ Datei `src/domain/hallOfFame.ts`, reine Funktion, getestet.
 | S7 | `#/hall-of-fame/:gameType` | Hall of Fame | Reiter pro Spiel; bei Doppelkopf Filter Gesamt/Runde A/Runde B | angemeldet |
 | S8 | `#/verwaltung` | Verwaltung | Spieler anlegen/archivieren, Fotos, Runden umbenennen, Konten einladen | nur Admin |
 
-**Navigation:** feste untere Leiste mit Start, Historie, Hall of Fame, Verwaltung (letzteres nur für Admin sichtbar). Spielablauf: S3 → S4 ⇄ S5 → Abschluss → S4 (beendet).
+**Navigation:** feste untere Leiste mit Start, Historie, Hall of Fame, Verwaltung (letzteres nur für Admin sichtbar). (1.1) `#/hall-of-fame` ohne Spiel öffnet das erste Spiel der `registry`. S8 enthält zusätzlich Doppelkopf-Runden anlegen und Backup (Export/Import). Spielablauf: S3 → S4 ⇄ S5 → Abschluss → S4 (beendet).
 
 **Gemeinsame Komponenten:** `Avatar` (rundes Foto oder Initialen), `PlayerRow` (Avatar links + Name + Wert rechts), `GameTile`, `BottomNav`, `ErrorList`.
 
@@ -296,6 +313,8 @@ Datei `src/domain/hallOfFame.ts`, reine Funktion, getestet.
 | `profiles` | angemeldet | Admin (Rolle und Verknüpfung) | Admin |
 
 - **Selbstregistrierung deaktiviert**; Konten per Einladung aus dem Supabase-Dashboard bzw. S8.
+  (1.1) Umsetzung: Der Admin legt Konten im Dashboard mit Startpasswort an („Create new user“). Ein Einladungs-Link bräuchte einen Bildschirm zum Passwort-Setzen und kollidiert mit dem HashRouter (Supabase schickt die Anmeldedaten im `#`-Teil der Adresse). Das Einladen aus S8 bräuchte den `service_role`-Schlüssel und entfällt deshalb. S8 legt Rolle und Spieler-Verknüpfung fest. Ein Trigger legt zu jedem neuen Konto ein Profil mit Rolle `member` an.
+- (1.1) **Mehrteilige Schreibvorgänge als Datenbankfunktionen** (`create_match`, `finish_match`, `save_group`), damit sie ganz oder gar nicht passieren. Sie laufen mit den Rechten des Aufrufers (`security invoker`), RLS gilt also weiter.
 - **Storage-Bucket `player-photos`: privat.** Lesen nur angemeldet über zeitlich begrenzte signierte URLs; Schreiben nur Admin.
 - **Fotos:** im Browser auf 256 × 256 px quadratisch zugeschnitten, als JPEG (Qualität 0,8) hochgeladen; Pfad `player-photos/<player_id>.jpg`.
 - **Schlüssel:** Supabase-URL und `anon`-Schlüssel liegen in `.env` und als GitHub-Actions-Secrets; der `anon`-Schlüssel ist für den Browser gedacht und nur zusammen mit RLS sicher. Der `service_role`-Schlüssel wird **nie** im Frontend oder Repository verwendet. `.env` steht in `.gitignore`, `.env.example` dokumentiert die Variablen ohne Werte.
@@ -309,6 +328,7 @@ foxy-spielebox/
 ├─ PRD.md · SPEC.md · README.md
 ├─ .env.example · .gitignore
 ├─ .github/workflows/deploy.yml     # Build + Veröffentlichung auf GitHub Pages
+├─ .github/workflows/supabase-ping.yml  # (1.1) wöchentlicher Ping (§12)
 ├─ supabase/migrations/             # SQL für Tabellen und RLS (Phase 4)
 └─ src/
    ├─ main.tsx · App.tsx            # Einstieg, Router, BottomNav
@@ -322,6 +342,7 @@ foxy-spielebox/
    │  └─ doppelkopf/ (…)
    ├─ domain/                       # types.ts, match.ts, hallOfFame.ts (+ Tests)
    ├─ data/                         # repository.ts, localRepository.ts, supabaseRepository.ts
+   │                                #   (1.1) + index.ts, photos.ts, auth.ts, supabaseServices.ts, supabaseMapping.ts, seed.ts
    ├─ styles/theme.css
    └─ assets/logo.svg
 ```
@@ -364,3 +385,5 @@ foxy-spielebox/
 | **3** | GitHub-Actions-Workflow, `base`-Pfad, Veröffentlichung | Live unter `jcologne2026.github.io/foxy-spielebox` |
 | **4** | Supabase: Migrationen, RLS, Auth, `SupabaseRepository`, Fotos, Import | Gemeinsame Daten mit Login |
 | **5** | Wizard, Doppelkopf, Historie, Hall of Fame | MVP vollständig |
+
+(1.1) **Reihenfolge der Umsetzung:** 2.1 → 2.2 → 3 (vorgezogen) → 2.3 → 2.4 → 2.5 → 5 → 4. Inkrement 4 ist als Code fertig und wird aktiv, sobald das Supabase-Projekt eingerichtet ist (Anleitung in der README).
